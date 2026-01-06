@@ -27,14 +27,16 @@ function Checkout() {
 
   const fetchOrderDetails = async () => {
     try {
-      // In a real implementation, this would call the public API
-      // For now, we'll simulate with mock data
-      const mockOrder = {
-        id: orderId,
-        amount: 50000, // 500.00 in paise
-        currency: 'INR'
-      };
-      setOrder(mockOrder);
+      // Call the public API to get order details
+      const response = await fetch(`/api/v1/orders/${orderId}/public`);
+      const data = await response.json();
+      
+      if (response.ok) {
+        setOrder(data);
+      } else {
+        setError(data.error?.description || 'Failed to fetch order details');
+        setPaymentStatus('error');
+      }
     } catch (err) {
       setError('Failed to fetch order details');
       setPaymentStatus('error');
