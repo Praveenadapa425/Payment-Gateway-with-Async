@@ -63,17 +63,23 @@ public class ValidationService {
         if (cleanedCardNumber.startsWith("4")) {
             return "visa";
         } else if (cleanedCardNumber.startsWith("5") && 
-                   cleanedCardNumber.length() >= 2 && 
-                   "12345".contains(cleanedCardNumber.substring(1, 2))) {
-            return "mastercard";
+                   cleanedCardNumber.length() >= 2) {
+            String secondDigit = cleanedCardNumber.substring(1, 2);
+            if ("12345".contains(secondDigit)) {
+                return "mastercard";
+            }
         } else if (cleanedCardNumber.startsWith("3") && 
-                   cleanedCardNumber.length() >= 2 && 
-                   ("47".contains(cleanedCardNumber.substring(1, 2)))) {
-            return "amex";
+                   cleanedCardNumber.length() >= 2) {
+            String secondDigit = cleanedCardNumber.substring(1, 2);
+            if ("47".contains(secondDigit)) {
+                return "amex";
+            }
         } else if (cleanedCardNumber.startsWith("6") && 
-                   cleanedCardNumber.length() >= 2 && 
-                   ("05".contains(cleanedCardNumber.substring(1, 2)))) {
-            return "rupay";
+                   cleanedCardNumber.length() >= 2) {
+            String secondDigit = cleanedCardNumber.substring(1, 2);
+            if ("05".contains(secondDigit)) {
+                return "rupay";
+            }
         } else if (cleanedCardNumber.startsWith("8") && 
                    cleanedCardNumber.length() >= 2) {
             int secondDigit = Character.getNumericValue(cleanedCardNumber.charAt(1));
