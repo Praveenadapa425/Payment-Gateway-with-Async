@@ -255,7 +255,7 @@ function Dashboard() {
                 color: '#28a745',
                 marginBottom: '10px'
               }}>
-                ₹{stats.totalAmount.toLocaleString()}
+                ₹{(stats.totalAmount / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </div>
               <h4 style={{
                 margin: 0,

@@ -400,7 +400,7 @@ function Checkout() {
                 fontWeight: 'bold',
                 color: '#28a745'
               }}>
-                ₹{(order.amount / 100).toFixed(2)}
+                ₹{(order.amount / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
               <span style={{ fontWeight: '500', color: '#495057' }}>Order ID:</span>
               <span data-test-id="order-id" style={{
@@ -517,7 +517,7 @@ function Checkout() {
               onMouseOver={(e) => e.target.style.backgroundColor = '#218838'}
               onMouseOut={(e) => e.target.style.backgroundColor = '#28a745'}
             >
-              Pay ₹{(order?.amount / 100).toFixed(2)}
+              Pay ₹{(order?.amount / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </button>
           </form>
         )}
@@ -649,7 +649,7 @@ function Checkout() {
               onMouseOver={(e) => e.target.style.backgroundColor = '#218838'}
               onMouseOut={(e) => e.target.style.backgroundColor = '#28a745'}
             >
-              Pay ₹{(order?.amount / 100).toFixed(2)}
+              Pay ₹{(order?.amount / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </button>
           </form>
         )}

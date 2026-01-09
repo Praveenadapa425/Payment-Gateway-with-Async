@@ -225,7 +225,7 @@ function Transactions() {
                         color: '#28a745',
                         fontWeight: '500',
                         textAlign: 'right'
-                      }}>₹{(transaction.amount / 100).toFixed(2)}</td>
+                      }}>₹{(transaction.amount / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                       <td data-test-id="method" style={{
                         padding: '15px 10px',
                         color: '#6c757d'
