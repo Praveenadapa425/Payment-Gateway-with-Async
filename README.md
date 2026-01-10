@@ -323,7 +323,7 @@ The system provides comprehensive health monitoring capabilities:
 
 ### Demo Video
 
-**[Complete Payment Flow Demo](https://vimeo.com/1153118558/41cdffc48b)** (2-3 minutes)
+**[Complete Payment Gateway Demo](https://vimeo.com/1153118558/41cdffc48b)** (2-3 minutes)
 
-Demonstrates the complete payment flow from order creation via API to successful payment completion on checkout page.
+Comprehensive demonstration showcasing both the merchant dashboard and customer checkout frontend interfaces, highlighting the complete payment flow from order creation to successful payment completion.
 
