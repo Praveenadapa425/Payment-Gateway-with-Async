@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createOrder } from '../utils/api';
 
 function OrderCreator({ apiCredentials }) {
   const [orderData, setOrderData] = useState({
@@ -30,27 +31,17 @@ function OrderCreator({ apiCredentials }) {
         requestData.notes = orderData.notes;
       }
 
-      const response = await fetch('/api/v1/orders', {
-        method: 'POST',
-        headers: {
-          'X-Api-Key': apiCredentials.apiKey,
-          'X-Api-Secret': apiCredentials.apiSecret,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(requestData)
-      });
+      const result = await createOrder(requestData, apiCredentials);
 
-      const data = await response.json();
-
-      if (response.ok) {
+      if (result.success) {
         setResult({
           success: true,
-          orderId: data.id,
-          amount: data.amount,
-          message: `Order created successfully! Order ID: ${data.id}`
+          orderId: result.data.id,
+          amount: result.data.amount,
+          message: `Order created successfully! Order ID: ${result.data.id}`
         });
       } else {
-        setError(data.error?.description || 'Failed to create order');
+        setError(result.data.error?.description || 'Failed to create order');
       }
     } catch (err) {
       setError(err.message);

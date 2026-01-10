@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { fetchPayments } from '../utils/api';
 
 function Transactions() {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
-  // API credentials for test merchant
+  // API credentials from localStorage
   const apiCredentials = {
-    apiKey: 'key_test_abc123',
-    apiSecret: 'secret_test_xyz789'
+    apiKey: localStorage.getItem('apiKey') || 'key_test_abc123',
+    apiSecret: localStorage.getItem('apiSecret') || 'secret_test_xyz789'
   };
 
   // Fetch transactions from API
@@ -16,20 +17,11 @@ function Transactions() {
     const fetchTransactions = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/v1/payments', {
-          method: 'GET',
-          headers: {
-            'X-Api-Key': apiCredentials.apiKey,
-            'X-Api-Secret': apiCredentials.apiSecret,
-            'Content-Type': 'application/json'
-          }
-        });
+        const result = await fetchPayments(apiCredentials);
         
-        if (response.ok) {
-          const data = await response.json();
-          
+        if (result.success) {
           // Transform data to match our table format
-          const transformedTransactions = data.map(payment => ({
+          const transformedTransactions = result.data.map(payment => ({
             id: payment.id,
             orderId: payment.order_id,
             amount: payment.amount,
@@ -40,8 +32,7 @@ function Transactions() {
           
           setTransactions(transformedTransactions);
         } else {
-          const errorData = await response.json();
-          setError(errorData.error?.description || 'Failed to fetch transactions');
+          setError(result.data.error?.description || 'Failed to fetch transactions');
         }
       } catch (err) {
         setError(err.message);
@@ -87,6 +78,12 @@ function Transactions() {
     );
   }
 
+  const handleLogout = () => {
+    localStorage.removeItem('apiKey');
+    localStorage.removeItem('apiSecret');
+    window.location.href = '/login';
+  };
+  
   return (
     <div style={{
       backgroundColor: '#f8f9fa',
@@ -100,17 +97,38 @@ function Transactions() {
         <header style={{
           marginBottom: '30px',
           padding: '20px 0',
-          borderBottom: '1px solid #e9ecef'
+          borderBottom: '1px solid #e9ecef',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
         }}>
-          <h1 style={{
-            margin: 0,
-            fontSize: '2rem',
-            color: '#343a40'
-          }}>Transactions</h1>
-          <p style={{
-            color: '#6c757d',
-            marginTop: '8px'
-          }}>View all payment transactions</p>
+          <div>
+            <h1 style={{
+              margin: 0,
+              fontSize: '2rem',
+              color: '#343a40'
+            }}>Transactions</h1>
+            <p style={{
+              color: '#6c757d',
+              marginTop: '8px'
+            }}>View all payment transactions</p>
+          </div>
+          <button
+            onClick={handleLogout}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: '#dc3545',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '0.9rem'
+            }}
+            onMouseOver={(e) => e.target.style.backgroundColor = '#c82333'}
+            onMouseOut={(e) => e.target.style.backgroundColor = '#dc3545'}
+          >
+            Logout
+          </button>
         </header>
         
         {error && (

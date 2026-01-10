@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import OrderCreator from '../components/OrderCreator';
+import { fetchOrders, fetchPayments } from '../utils/api';
 
 function Dashboard() {
-  const [apiCredentials] = useState({
-    apiKey: 'key_test_abc123',
-    apiSecret: 'secret_test_xyz789'
+  const [apiCredentials, setApiCredentials] = useState({
+    apiKey: localStorage.getItem('apiKey') || 'key_test_abc123',
+    apiSecret: localStorage.getItem('apiSecret') || 'secret_test_xyz789'
   });
+  const [showApiSecret, setShowApiSecret] = useState(false);
   
   const [stats, setStats] = useState({
     totalTransactions: 0,
@@ -21,35 +23,22 @@ function Dashboard() {
     const fetchStats = async () => {
       try {
         setLoading(true);
-        // Get orders to calculate stats
-        const response = await fetch('/api/v1/orders', {
-          method: 'GET',
-          headers: {
-            'X-Api-Key': apiCredentials.apiKey,
-            'X-Api-Secret': apiCredentials.apiSecret,
-            'Content-Type': 'application/json'
-          }
-        });
         
-        if (response.ok) {
-          const data = await response.json();
+        // Get orders to calculate stats
+        const ordersResult = await fetchOrders(apiCredentials);
+        
+        if (ordersResult.success) {
+          const orders = ordersResult.data;
           
           // Calculate stats from fetched orders
-          const totalTransactions = data.length;
-          const totalAmount = data.reduce((sum, order) => sum + order.amount, 0);
+          const totalTransactions = orders.length;
+          const totalAmount = orders.reduce((sum, order) => sum + order.amount, 0);
           
           // For success rate, we'd need to fetch payments as well
-          const paymentResponse = await fetch('/api/v1/payments', {
-            method: 'GET',
-            headers: {
-              'X-Api-Key': apiCredentials.apiKey,
-              'X-Api-Secret': apiCredentials.apiSecret,
-              'Content-Type': 'application/json'
-            }
-          });
+          const paymentsResult = await fetchPayments(apiCredentials);
           
-          if (paymentResponse.ok) {
-            const payments = await paymentResponse.json();
+          if (paymentsResult.success) {
+            const payments = paymentsResult.data;
             const successfulPayments = payments.filter(p => p.status === 'success').length;
             const successRate = payments.length > 0 ? Math.round((successfulPayments / payments.length) * 100) : 0;
             
@@ -71,8 +60,7 @@ function Dashboard() {
             });
           }
         } else {
-          const errorData = await response.json();
-          setError(errorData.error?.description || 'Failed to fetch stats');
+          setError(ordersResult.data.error?.description || 'Failed to fetch stats');
         }
       } catch (err) {
         setError(err.message);
@@ -118,6 +106,12 @@ function Dashboard() {
     );
   }
 
+  const handleLogout = () => {
+    localStorage.removeItem('apiKey');
+    localStorage.removeItem('apiSecret');
+    window.location.href = '/login';
+  };
+
   return (
     <div style={{
       backgroundColor: '#f8f9fa',
@@ -131,17 +125,38 @@ function Dashboard() {
         <header style={{
           marginBottom: '30px',
           padding: '20px 0',
-          borderBottom: '1px solid #e9ecef'
+          borderBottom: '1px solid #e9ecef',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
         }}>
-          <h1 style={{
-            margin: 0,
-            fontSize: '2rem',
-            color: '#343a40'
-          }}>Dashboard</h1>
-          <p style={{
-            color: '#6c757d',
-            marginTop: '8px'
-          }}>Welcome to your payment gateway dashboard</p>
+          <div>
+            <h1 style={{
+              margin: 0,
+              fontSize: '2rem',
+              color: '#343a40'
+            }}>Dashboard</h1>
+            <p style={{
+              color: '#6c757d',
+              marginTop: '8px'
+            }}>Welcome to your payment gateway dashboard</p>
+          </div>
+          <button
+            onClick={handleLogout}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: '#dc3545',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '0.9rem'
+            }}
+            onMouseOver={(e) => e.target.style.backgroundColor = '#c82333'}
+            onMouseOut={(e) => e.target.style.backgroundColor = '#dc3545'}
+          >
+            Logout
+          </button>
         </header>
         
         {error && (
@@ -209,7 +224,21 @@ function Dashboard() {
                   fontFamily: 'monospace',
                   fontSize: '0.9rem',
                   wordBreak: 'break-all'
-                }}>{apiCredentials.apiSecret}</span>
+                }}>{showApiSecret ? apiCredentials.apiSecret : apiCredentials.apiSecret ? apiCredentials.apiSecret.replace(/^(.{6}).*(.{4})$/, '$1...$2') : ''}</span>
+                <button 
+                  onClick={() => setShowApiSecret(!showApiSecret)}
+                  style={{
+                    position: 'absolute',
+                    right: '5px',
+                    top: '5px',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#6c757d'
+                  }}
+                >
+                  {showApiSecret ? 'Hide' : 'Show'}
+                </button>
               </div>
             </div>
           </div>

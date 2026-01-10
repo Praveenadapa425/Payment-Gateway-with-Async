@@ -1,20 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
+  // Check if already logged in
+  useEffect(() => {
+    const storedApiKey = localStorage.getItem('apiKey');
+    const storedApiSecret = localStorage.getItem('apiSecret');
+    
+    if (storedApiKey && storedApiSecret) {
+      // Already logged in, redirect to dashboard
+      window.location.href = '/dashboard';
+    }
+  }, []);
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    // For this deliverable, we'll use the test merchant credentials
+    // For this deliverable, we'll use the test merchant credentials when correct email is entered
     if (email === 'test@example.com') {
-      // Store mock authentication token
-      localStorage.setItem('authToken', 'mock-token');
+      // Store the test API credentials in localStorage
+      localStorage.setItem('apiKey', 'key_test_abc123');
+      localStorage.setItem('apiSecret', 'secret_test_xyz789');
       // Redirect to dashboard
       window.location.href = '/dashboard';
     } else {
       alert('Invalid credentials. Use test@example.com as email.');
     }
+  };
+
+  // Function to use test credentials
+  const useTestCredentials = () => {
+    setEmail('test@example.com');
+    setPassword('any_password');
   };
 
   return (
@@ -57,7 +75,7 @@ function Login() {
             <input
               data-test-id="email-input"
               type="email"
-              placeholder="Enter your email"
+              placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               style={{
@@ -83,7 +101,7 @@ function Login() {
             <input
               data-test-id="password-input"
               type="password"
-              placeholder="Enter your password"
+              placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               style={{
@@ -117,22 +135,9 @@ function Login() {
             onMouseOver={(e) => e.target.style.backgroundColor = '#0069d9'}
             onMouseOut={(e) => e.target.style.backgroundColor = '#007bff'}
           >
-            Sign In
+            Login
           </button>
         </form>
-        <div style={{
-          marginTop: '20px',
-          padding: '12px',
-          backgroundColor: '#e7f3ff',
-          borderRadius: '6px',
-          border: '1px solid #b8daff',
-          color: '#004085',
-          fontSize: '0.9rem'
-        }}>
-          <strong>Test Credentials:</strong><br />
-          Email: <code>test@example.com</code><br />
-          Password: Any password accepted
-        </div>
       </div>
     </div>
   );
