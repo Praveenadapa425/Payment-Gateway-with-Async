@@ -91,6 +91,7 @@ public class PublicApiController {
             CreatePaymentResponse response = paymentService.createPayment(
                 merchantOpt.get().getApiKey(), 
                 merchantOpt.get().getApiSecret(), 
+                null, // No idempotency key for public endpoint
                 request
             );
             return ResponseEntity.status(HttpStatus.CREATED).body(response);

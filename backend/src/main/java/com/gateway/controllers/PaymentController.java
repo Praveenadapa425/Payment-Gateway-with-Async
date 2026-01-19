@@ -4,6 +4,8 @@ import com.gateway.dto.CreatePaymentRequest;
 import com.gateway.dto.CreatePaymentResponse;
 import com.gateway.dto.GetPaymentResponse;
 import com.gateway.dto.ErrorResponse;
+import com.gateway.dto.CapturePaymentRequest;
+import com.gateway.dto.CapturePaymentResponse;
 import com.gateway.services.PaymentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -19,14 +21,15 @@ public class PaymentController {
     @Autowired
     private PaymentService paymentService;
 
-    @PostMapping("/payments")
+    @PostMapping(value = "/payments", consumes = "application/json")
     public ResponseEntity<?> createPayment(
             @RequestHeader("X-Api-Key") String apiKey,
             @RequestHeader("X-Api-Secret") String apiSecret,
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
             @RequestBody CreatePaymentRequest request) {
         
         try {
-            CreatePaymentResponse response = paymentService.createPayment(apiKey, apiSecret, request);
+            CreatePaymentResponse response = paymentService.createPayment(apiKey, apiSecret, idempotencyKey, request);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (RuntimeException e) {
             // Handle authentication errors
@@ -105,6 +108,36 @@ public class PaymentController {
             else if (e.getMessage().equals("Payment not found")) {
                 ErrorResponse errorResponse = new ErrorResponse("NOT_FOUND_ERROR", e.getMessage());
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+            }
+            // Handle other errors
+            else {
+                ErrorResponse errorResponse = new ErrorResponse("BAD_REQUEST_ERROR", e.getMessage());
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+            }
+        }
+    }
+
+    @PostMapping("/payments/{paymentId}/capture")
+    public ResponseEntity<?> capturePayment(
+            @RequestHeader("X-Api-Key") String apiKey,
+            @RequestHeader("X-Api-Secret") String apiSecret,
+            @PathVariable("paymentId") String paymentId,
+            @RequestBody CapturePaymentRequest request) {
+        
+        try {
+            CapturePaymentResponse response = paymentService.capturePayment(apiKey, apiSecret, paymentId, request);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            // Handle authentication errors
+            if (e.getMessage().equals("Invalid API credentials")) {
+                ErrorResponse errorResponse = new ErrorResponse("AUTHENTICATION_ERROR", e.getMessage());
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+            }
+            // Handle validation errors
+            else if (e.getMessage().contains("Payment not found") ||
+                     e.getMessage().contains("Payment not in capturable state")) {
+                ErrorResponse errorResponse = new ErrorResponse("BAD_REQUEST_ERROR", e.getMessage());
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
             }
             // Handle other errors
             else {

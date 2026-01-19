@@ -15,6 +15,10 @@ public class IdGenerator {
         return "pay_" + generateRandomString(16);
     }
     
+    public static String generateRefundId() {
+        return "rfnd_" + generateRandomString(16);
+    }
+    
     private static String generateRandomString(int length) {
         StringBuilder result = new StringBuilder();
         for (int i = 0; i < length; i++) {

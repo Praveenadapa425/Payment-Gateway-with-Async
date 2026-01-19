@@ -27,8 +27,8 @@ public class Payment {
     @Column(length = 20, nullable = false)
     private String method;
 
-    @Column(length = 20, columnDefinition = "VARCHAR(20) DEFAULT 'processing'")
-    private String status = "processing";
+    @Column(length = 20, columnDefinition = "VARCHAR(20) DEFAULT 'pending'")
+    private String status = "pending";
 
     @Column(length = 255)
     private String vpa;
@@ -44,6 +44,9 @@ public class Payment {
 
     @Column(name = "error_description", columnDefinition = "TEXT")
     private String errorDescription;
+
+    @Column(columnDefinition = "BOOLEAN DEFAULT FALSE")
+    private Boolean captured = false;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
@@ -171,6 +174,14 @@ public class Payment {
 
     public void setErrorDescription(String errorDescription) {
         this.errorDescription = errorDescription;
+    }
+
+    public Boolean getCaptured() {
+        return captured;
+    }
+
+    public void setCaptured(Boolean captured) {
+        this.captured = captured;
     }
 
     public LocalDateTime getCreatedAt() {

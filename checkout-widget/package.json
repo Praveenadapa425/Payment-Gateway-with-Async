@@ -1,0 +1,17 @@
+{
+  "name": "payment-gateway-sdk",
+  "version": "1.0.0",
+  "description": "Embeddable SDK for payment gateway checkout",
+  "main": "dist/checkout.js",
+  "scripts": {
+    "build": "webpack",
+    "dev": "webpack --mode development"
+  },
+  "keywords": ["payment", "gateway", "sdk", "checkout"],
+  "author": "Payment Gateway",
+  "license": "MIT",
+  "devDependencies": {
+    "webpack": "^5.0.0",
+    "webpack-cli": "^4.0.0"
+  }
+}

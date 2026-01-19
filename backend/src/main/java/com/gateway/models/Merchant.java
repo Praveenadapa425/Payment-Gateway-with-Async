@@ -30,6 +30,9 @@ public class Merchant {
     @Column(columnDefinition = "TEXT")
     private String webhookUrl;
 
+    @Column(name = "webhook_secret", length = 64)
+    private String webhookSecret;
+
     @Column(name = "is_active", columnDefinition = "BOOLEAN DEFAULT TRUE")
     private Boolean isActive = true;
 
@@ -110,6 +113,14 @@ public class Merchant {
 
     public void setWebhookUrl(String webhookUrl) {
         this.webhookUrl = webhookUrl;
+    }
+
+    public String getWebhookSecret() {
+        return webhookSecret;
+    }
+
+    public void setWebhookSecret(String webhookSecret) {
+        this.webhookSecret = webhookSecret;
     }
 
     public Boolean getIsActive() {

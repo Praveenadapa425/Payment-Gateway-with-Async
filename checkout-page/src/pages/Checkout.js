@@ -270,7 +270,13 @@ function Checkout() {
             Your payment has been processed successfully
           </p>
           <button 
-            onClick={() => window.location.href = '/'} 
+            onClick={() => {
+              // Send success message to parent
+              window.parent.postMessage({
+                type: 'payment_success',
+                data: { paymentId: paymentId }
+              }, '*');
+            }}
             style={{
               padding: '12px 24px',
               backgroundColor: '#28a745',
@@ -285,7 +291,7 @@ function Checkout() {
             onMouseOver={(e) => e.target.style.backgroundColor = '#218838'}
             onMouseOut={(e) => e.target.style.backgroundColor = '#28a745'}
           >
-            New Payment
+            Close
           </button>
         </div>
       </div>
@@ -339,7 +345,14 @@ function Checkout() {
           </p>
           <button 
             data-test-id="retry-button"
-            onClick={() => setPaymentStatus('idle')}
+            onClick={() => {
+              // Send message to parent about retry
+              window.parent.postMessage({
+                type: 'payment_failed',
+                data: { error: error || 'Payment could not be processed' }
+              }, '*');
+              setPaymentStatus('idle');
+            }}
             style={{
               padding: '12px 24px',
               backgroundColor: '#007bff',
