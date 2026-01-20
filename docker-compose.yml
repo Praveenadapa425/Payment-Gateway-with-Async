@@ -41,6 +41,11 @@ services:
       DB_PASSWORD: gateway_pass
       REDIS_URL: redis://redis:6379
       PORT: 8000
+      TEST_MODE: "true"
+      TEST_PAYMENT_SUCCESS: "true"
+      TEST_PROCESSING_DELAY: "2000"
+      PROCESSING_DELAY_MIN: "2000"
+      PROCESSING_DELAY_MAX: "3000"
       WEBHOOK_RETRY_INTERVALS_TEST: "true"
     depends_on:
       postgres:
@@ -64,6 +69,11 @@ services:
       DB_USERNAME: gateway_user
       DB_PASSWORD: gateway_pass
       REDIS_URL: redis://redis:6379
+      TEST_MODE: "true"
+      TEST_PAYMENT_SUCCESS: "true"
+      TEST_PROCESSING_DELAY: "2000"
+      PROCESSING_DELAY_MIN: "2000"
+      PROCESSING_DELAY_MAX: "3000"
       WEBHOOK_RETRY_INTERVALS_TEST: "true"
     depends_on:
       postgres:

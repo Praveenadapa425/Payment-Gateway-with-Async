@@ -1774,3 +1774,4 @@ A: Yes, the modal/iframe should be responsive and work on mobile viewports. Test
 Q: What if merchant's webhook endpoint returns 500 error?
 A: Treat it as a failed delivery attempt. Log the response code (500), increment attempts, and schedule a retry if attempts < 5. Merchants can see the error in webhook logs.
 
+sdf
