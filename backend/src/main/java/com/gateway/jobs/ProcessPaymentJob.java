@@ -13,32 +13,25 @@ import java.util.Random;
 @Component
 public class ProcessPaymentJob implements Job {
     
-    @Autowired
     private PaymentRepository paymentRepository;
     
-    @Autowired
     private ValidationService validationService;
     
-    @Value("${TEST_MODE:false}")
     private boolean testMode;
     
-    @Value("${TEST_PAYMENT_SUCCESS:true}")
     private boolean testPaymentSuccess;
     
-    @Value("${PROCESSING_DELAY_MIN:5000}")
     private int processingDelayMin;
     
-    @Value("${PROCESSING_DELAY_MAX:10000}")
     private int processingDelayMax;
     
-    @Value("${TEST_PROCESSING_DELAY:1000}")
     private int testProcessingDelay;
     
-    @Value("${UPI_SUCCESS_RATE:0.90}")
     private double upiSuccessRate;
     
-    @Value("${CARD_SUCCESS_RATE:0.95}")
     private double cardSuccessRate;
+    
+    private com.gateway.services.JobQueueService jobQueueService;
     
     private String paymentId;
     
@@ -58,6 +51,18 @@ public class ProcessPaymentJob implements Job {
         }
         
         Payment payment = paymentOpt.get();
+        
+        // Update status to processing if it's pending
+        if ("pending".equals(payment.getStatus())) {
+            payment.setStatus("processing");
+            paymentRepository.save(payment);
+        }
+        
+        // Ensure the status is processing before delay
+        if (!"processing".equals(payment.getStatus())) {
+            payment.setStatus("processing");
+            paymentRepository.save(payment);
+        }
         
         // Simulate payment processing with delay
         int delay = testMode ? testProcessingDelay : 
@@ -95,11 +100,53 @@ public class ProcessPaymentJob implements Job {
         // Save updated payment status
         paymentRepository.save(payment);
         
-        // TODO: Enqueue webhook delivery job for the appropriate event
-        // This would be implemented when we create the webhook worker
+        // Enqueue webhook delivery job for the appropriate event
+        if (jobQueueService != null) {
+            com.gateway.jobs.DeliverWebhookJob webhookJob = new com.gateway.jobs.DeliverWebhookJob(
+                payment.getMerchantId(), 
+                success ? "payment.success" : "payment.failed", 
+                createWebhookPayload(payment, success)
+            );
+            jobQueueService.enqueueJob("webhook_queue", webhookJob);
+        }
+    }
+    
+    private String createWebhookPayload(Payment payment, boolean success) {
+        // Create a simple JSON payload for the webhook
+        StringBuilder payload = new StringBuilder();
+        payload.append("{");
+        payload.append("\"event\": \"").append(success ? "payment.success" : "payment.failed").append("\",");
+        payload.append("\"timestamp\": \"").append(System.currentTimeMillis() / 1000).append("\",");
+        payload.append("\"data\": {");
+        payload.append("\"payment\": {");
+        payload.append("\"id\": \"").append(payment.getId()).append("\",");
+        payload.append("\"order_id\": \"").append(payment.getOrderId()).append("\",");
+        payload.append("\"amount\": ").append(payment.getAmount()).append(",");
+        payload.append("\"currency\": \"").append(payment.getCurrency()).append("\",");
+        payload.append("\"method\": \"").append(payment.getMethod()).append("\",");
+        payload.append("\"status\": \"").append(payment.getStatus()).append("\",");
+        payload.append("\"created_at\": \"").append(payment.getCreatedAt().toString()).append("\"");
+        payload.append("}}}}");
+        return payload.toString();
     }
     
     public void setPaymentId(String paymentId) {
         this.paymentId = paymentId;
+    }
+    
+    public void setDependencies(PaymentRepository paymentRepository, ValidationService validationService,
+            boolean testMode, boolean testPaymentSuccess, int processingDelayMin, int processingDelayMax,
+            int testProcessingDelay, double upiSuccessRate, double cardSuccessRate, 
+            com.gateway.services.JobQueueService jobQueueService) {
+        this.paymentRepository = paymentRepository;
+        this.validationService = validationService;
+        this.testMode = testMode;
+        this.testPaymentSuccess = testPaymentSuccess;
+        this.processingDelayMin = processingDelayMin;
+        this.processingDelayMax = processingDelayMax;
+        this.testProcessingDelay = testProcessingDelay;
+        this.upiSuccessRate = upiSuccessRate;
+        this.cardSuccessRate = cardSuccessRate;
+        this.jobQueueService = jobQueueService;
     }
 }

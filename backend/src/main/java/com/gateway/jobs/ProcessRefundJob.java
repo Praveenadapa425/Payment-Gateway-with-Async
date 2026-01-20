@@ -12,10 +12,10 @@ import java.util.Optional;
 @Component
 public class ProcessRefundJob implements Job {
     
-    @Autowired
     private RefundRepository refundRepository;
     
-    @Value("${TEST_MODE:false}")
+    private com.gateway.repositories.PaymentRepository paymentRepository;
+    
     private boolean testMode;
     
     private String refundId;
@@ -61,5 +61,11 @@ public class ProcessRefundJob implements Job {
     
     public void setRefundId(String refundId) {
         this.refundId = refundId;
+    }
+    
+    public void setDependencies(RefundRepository refundRepository, com.gateway.repositories.PaymentRepository paymentRepository, boolean testMode) {
+        this.refundRepository = refundRepository;
+        this.paymentRepository = paymentRepository;
+        this.testMode = testMode;
     }
 }

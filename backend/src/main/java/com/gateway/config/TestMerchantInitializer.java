@@ -39,6 +39,8 @@ public class TestMerchantInitializer {
             testMerchant.setEmail(testMerchantEmail);
             testMerchant.setApiKey(testApiKey);
             testMerchant.setApiSecret(testApiSecret);
+            testMerchant.setWebhookUrl("http://host.docker.internal:4000/webhook");
+            testMerchant.setWebhookSecret("whsec_test_abc123");
             
             merchantRepository.save(testMerchant);
         }

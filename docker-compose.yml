@@ -41,6 +41,7 @@ services:
       DB_PASSWORD: gateway_pass
       REDIS_URL: redis://redis:6379
       PORT: 8000
+      WEBHOOK_RETRY_INTERVALS_TEST: "true"
     depends_on:
       postgres:
         condition: service_healthy
@@ -63,6 +64,7 @@ services:
       DB_USERNAME: gateway_user
       DB_PASSWORD: gateway_pass
       REDIS_URL: redis://redis:6379
+      WEBHOOK_RETRY_INTERVALS_TEST: "true"
     depends_on:
       postgres:
         condition: service_healthy
@@ -86,6 +88,15 @@ services:
     container_name: gateway_checkout
     ports:
       - "3001:80"
+    depends_on:
+      - api
+
+  sdk:
+    build:
+      context: ./checkout-widget
+    container_name: gateway_sdk
+    ports:
+      - "3002:80"
     depends_on:
       - api
 

@@ -241,6 +241,84 @@ The system provides configurable test environments for deterministic evaluation:
 - **`TEST_MODE=true`** enables predictable payment outcomes for consistent testing
 - **`TEST_PAYMENT_SUCCESS=true/false`** forces predetermined success or failure states
 - **`TEST_PROCESSING_DELAY`** sets fixed processing delays for reliable test execution
+- **`WEBHOOK_RETRY_INTERVALS_TEST=true`** enables shortened webhook retry intervals for testing
+
+## 🔗 Webhook Configuration
+
+Merchants can configure webhooks to receive real-time payment events:
+
+1. **Configure Webhook URL** in merchant settings
+2. **Set Webhook Secret** for HMAC signature verification
+3. **Receive Events** for payment success, failure, and refund processing
+
+### Webhook Event Structure
+```json
+{
+  "event": "payment.success",
+  "timestamp": 1705315870,
+  "data": {
+    "payment": {
+      "id": "pay_H8sK3jD9s2L1pQr",
+      "order_id": "order_NXhj67fGH2jk9mPq",
+      "amount": 50000,
+      "currency": "INR",
+      "method": "upi",
+      "status": "success",
+      "created_at": "2024-01-15T10:31:00Z"
+    }
+  }
+}
+```
+
+### HMAC Signature Verification
+```javascript
+const crypto = require('crypto');
+
+function verifyWebhook(payload, signature, secret) {
+  const expectedSignature = crypto
+    .createHmac('sha256', secret)
+    .update(JSON.stringify(payload))
+    .digest('hex');
+  
+  return signature === expectedSignature;
+}
+```
+
+### Test Webhook Receiver
+For testing webhook delivery, run a simple receiver:
+
+```javascript
+// test-webhook-server.js
+const express = require('express');
+const crypto = require('crypto');
+
+const app = express();
+app.use(express.json());
+
+app.post('/webhook', (req, res) => {
+  const signature = req.headers['x-webhook-signature'];
+  const payload = JSON.stringify(req.body);
+  
+  // Verify signature
+  const expectedSignature = crypto
+    .createHmac('sha256', 'whsec_test_abc123')
+    .update(payload)
+    .digest('hex');
+  
+  if (signature !== expectedSignature) {
+    return res.status(401).send('Invalid signature');
+  }
+  
+  console.log('✅ Webhook verified:', req.body.event);
+  res.status(200).send('OK');
+});
+
+app.listen(4000, () => {
+  console.log('Test webhook server running on port 4000');
+});
+```
+
+Configure your webhook URL to `http://host.docker.internal:4000/webhook` (Mac/Windows) or `http://172.17.0.1:4000/webhook` (Linux).
 
 ## ⚠️ Error Handling
 

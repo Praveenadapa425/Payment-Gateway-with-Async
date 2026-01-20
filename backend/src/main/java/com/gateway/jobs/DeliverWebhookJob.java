@@ -22,16 +22,12 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class DeliverWebhookJob implements Job {
     
-    @Autowired
     private MerchantRepository merchantRepository;
     
-    @Autowired
     private WebhookLogRepository webhookLogRepository;
     
-    @Autowired
-    private RestTemplate restTemplate;
+
     
-    @Value("${WEBHOOK_RETRY_INTERVALS_TEST:false}")
     private boolean webhookRetryIntervalsTest;
     
     private UUID merchantId;
@@ -39,6 +35,12 @@ public class DeliverWebhookJob implements Job {
     private String payload;
     
     public DeliverWebhookJob() {}
+    
+    public void setDependencies(WebhookLogRepository webhookLogRepository, MerchantRepository merchantRepository, boolean webhookRetryIntervalsTest) {
+        this.webhookLogRepository = webhookLogRepository;
+        this.merchantRepository = merchantRepository;
+        this.webhookRetryIntervalsTest = webhookRetryIntervalsTest;
+    }
     
     public DeliverWebhookJob(UUID merchantId, String eventType, String payload) {
         this.merchantId = merchantId;

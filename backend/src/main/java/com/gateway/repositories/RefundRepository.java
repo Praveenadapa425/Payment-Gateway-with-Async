@@ -11,5 +11,6 @@ import java.util.UUID;
 public interface RefundRepository extends JpaRepository<Refund, String> {
     List<Refund> findByPaymentId(String paymentId);
     List<Refund> findByMerchantId(UUID merchantId);
+    List<Refund> findByMerchantIdOrderByCreatedAtDesc(UUID merchantId);
     Optional<Refund> findByIdAndMerchantId(String id, UUID merchantId);
 }

@@ -9,6 +9,16 @@ function Dashboard() {
   });
   const [showApiSecret, setShowApiSecret] = useState(false);
   
+  // Store credentials in localStorage when component mounts
+  useEffect(() => {
+    if (!localStorage.getItem('apiKey')) {
+      localStorage.setItem('apiKey', 'key_test_abc123');
+    }
+    if (!localStorage.getItem('apiSecret')) {
+      localStorage.setItem('apiSecret', 'secret_test_xyz789');
+    }
+  }, []);
+  
   const [stats, setStats] = useState({
     totalTransactions: 0,
     totalAmount: 0,
@@ -334,6 +344,32 @@ function Dashboard() {
             onMouseOut={(e) => e.target.style.backgroundColor = '#007bff'}>
               View Transactions
             </a>
+            <a href="/dashboard/refunds" style={{
+              padding: '12px 24px',
+              backgroundColor: '#28a745',
+              color: 'white',
+              textDecoration: 'none',
+              borderRadius: '6px',
+              fontWeight: '500',
+              transition: 'background-color 0.2s'
+            }}
+            onMouseOver={(e) => e.target.style.backgroundColor = '#218838'}
+            onMouseOut={(e) => e.target.style.backgroundColor = '#28a745'}>
+              View Refunds
+            </a>
+            <a href="/dashboard/webhooks" style={{
+              padding: '12px 24px',
+              backgroundColor: '#ffc107',
+              color: '#212529',
+              textDecoration: 'none',
+              borderRadius: '6px',
+              fontWeight: '500',
+              transition: 'background-color 0.2s'
+            }}
+            onMouseOver={(e) => e.target.style.backgroundColor = '#e0a800'}
+            onMouseOut={(e) => e.target.style.backgroundColor = '#ffc107'}>
+              Manage Webhooks
+            </a>
             <a href="/dashboard" style={{
               padding: '12px 24px',
               backgroundColor: '#6c757d',
@@ -346,6 +382,19 @@ function Dashboard() {
             onMouseOver={(e) => e.target.style.backgroundColor = '#5a6268'}
             onMouseOut={(e) => e.target.style.backgroundColor = '#6c757d'}>
               Refresh Data
+            </a>
+            <a href="/dashboard/sdk-demo" style={{
+              padding: '12px 24px',
+              backgroundColor: '#17a2b8',
+              color: 'white',
+              textDecoration: 'none',
+              borderRadius: '6px',
+              fontWeight: '500',
+              transition: 'background-color 0.2s'
+            }}
+            onMouseOver={(e) => e.target.style.backgroundColor = '#138496'}
+            onMouseOut={(e) => e.target.style.backgroundColor = '#17a2b8'}>
+              SDK Demo
             </a>
           </div>
           

@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { fetchPayments } from '../utils/api';
+import { fetchPayments, capturePayment, createRefund, getHealth } from '../utils/api';
 
 function Transactions() {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0); // State to trigger refresh
+  const [actionLoading, setActionLoading] = useState({}); // Track loading state for individual actions
+  const [actionErrors, setActionErrors] = useState({}); // Track errors for individual actions
+  const [healthStatus, setHealthStatus] = useState(null); // Health status of the system
   
   // API credentials from localStorage
   const apiCredentials = {
@@ -25,9 +29,17 @@ function Transactions() {
             id: payment.id,
             orderId: payment.order_id,
             amount: payment.amount,
+            currency: payment.currency,
             method: payment.method,
             status: payment.status,
-            createdAt: payment.created_at || payment.createdAt
+            vpa: payment.vpa,
+            card_network: payment.card_network,
+            card_last4: payment.card_last4,
+            captured: payment.captured,
+            error_code: payment.error_code,
+            error_description: payment.error_description,
+            createdAt: payment.created_at || payment.createdAt,
+            updatedAt: payment.updated_at
           }));
           
           setTransactions(transformedTransactions);
@@ -41,8 +53,20 @@ function Transactions() {
       }
     };
     
+    const fetchHealthStatus = async () => {
+      try {
+        const result = await getHealth();
+        if (result.success) {
+          setHealthStatus(result.data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch health status:', err);
+      }
+    };
+    
     fetchTransactions();
-  }, []);
+    fetchHealthStatus(); // Fetch health status on initial load
+  }, [refreshTrigger]); // Include refreshTrigger in dependency array
 
   if (loading) {
     return (
@@ -84,6 +108,60 @@ function Transactions() {
     window.location.href = '/login';
   };
   
+  // Handler for capture action
+  const handleCapture = async (paymentId) => {
+    setActionLoading(prev => ({ ...prev, [paymentId]: true }));
+    setActionErrors(prev => ({ ...prev, [paymentId]: null }));
+    
+    try {
+      const result = await capturePayment(paymentId, apiCredentials);
+      if (result.success) {
+        alert(`Payment ${paymentId} captured successfully!`);
+        // Refresh the transactions list
+        setRefreshTrigger(prev => prev + 1);
+      } else {
+        setActionErrors(prev => ({ ...prev, [paymentId]: result.data.error?.description || 'Failed to capture payment' }));
+      }
+    } catch (error) {
+      setActionErrors(prev => ({ ...prev, [paymentId]: error.message }));
+    } finally {
+      setActionLoading(prev => ({ ...prev, [paymentId]: false }));
+    }
+  };
+  
+  // Handler for refund action
+  const handleRefund = async (paymentId) => {
+    const amountStr = prompt('Enter refund amount (in smallest currency unit, e.g., paise for INR):', '500');
+    if (!amountStr) return; // User cancelled
+    
+    const amount = parseInt(amountStr, 10);
+    if (isNaN(amount) || amount <= 0) {
+      setActionErrors(prev => ({ ...prev, [paymentId]: 'Invalid amount entered' }));
+      return;
+    }
+    
+    const reason = prompt('Enter refund reason (optional):', 'Customer request');
+    
+    setActionLoading(prev => ({ ...prev, [paymentId]: true }));
+    setActionErrors(prev => ({ ...prev, [paymentId]: null }));
+    
+    try {
+      const refundData = { amount, reason: reason || 'Customer request' };
+      const result = await createRefund(paymentId, refundData, apiCredentials);
+      if (result.success) {
+        alert(`Refund created successfully for payment ${paymentId}!`);
+        // Refresh the transactions list
+        setRefreshTrigger(prev => prev + 1);
+      } else {
+        setActionErrors(prev => ({ ...prev, [paymentId]: result.data.error?.description || 'Failed to create refund' }));
+      }
+    } catch (error) {
+      setActionErrors(prev => ({ ...prev, [paymentId]: error.message }));
+    } finally {
+      setActionLoading(prev => ({ ...prev, [paymentId]: false }));
+    }
+  };
+  
   return (
     <div style={{
       backgroundColor: '#f8f9fa',
@@ -112,6 +190,20 @@ function Transactions() {
               color: '#6c757d',
               marginTop: '8px'
             }}>View all payment transactions</p>
+            {healthStatus && (
+              <div style={{
+                display: 'inline-block',
+                marginTop: '10px',
+                padding: '5px 10px',
+                borderRadius: '12px',
+                backgroundColor: healthStatus.status === 'healthy' ? 'rgba(40, 167, 69, 0.1)' : 'rgba(220, 53, 69, 0.1)',
+                color: healthStatus.status === 'healthy' ? '#28a745' : '#dc3545',
+                fontSize: '0.8rem',
+                fontWeight: '500'
+              }}>
+                System Status: {healthStatus.status} | DB: {healthStatus.database} | Redis: {healthStatus.redis} | Worker: {healthStatus.worker}
+              </div>
+            )}
           </div>
           <button
             onClick={handleLogout}
@@ -213,6 +305,18 @@ function Transactions() {
                     textAlign: 'left',
                     fontWeight: '600',
                     color: '#495057'
+                  }}>Captured</th>
+                  <th style={{
+                    padding: '15px 10px',
+                    textAlign: 'left',
+                    fontWeight: '600',
+                    color: '#495057'
+                  }}>Actions</th>
+                  <th style={{
+                    padding: '15px 10px',
+                    textAlign: 'left',
+                    fontWeight: '600',
+                    color: '#495057'
                   }}>Created</th>
                 </tr>
               </thead>
@@ -232,22 +336,35 @@ function Transactions() {
                     >
                       <td data-test-id="payment-id" style={{
                         padding: '15px 10px',
-                        color: '#495057'
+                        color: '#495057',
+                        fontFamily: 'monospace',
+                        fontSize: '0.9em'
                       }}>{transaction.id}</td>
                       <td data-test-id="order-id" style={{
                         padding: '15px 10px',
-                        color: '#495057'
+                        color: '#495057',
+                        fontFamily: 'monospace',
+                        fontSize: '0.9em'
                       }}>{transaction.orderId}</td>
                       <td data-test-id="amount" style={{
                         padding: '15px 10px',
                         color: '#28a745',
                         fontWeight: '500',
                         textAlign: 'right'
-                      }}>₹{(transaction.amount / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                      }}>₹{(transaction.amount / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<br />
+                      <small style={{color: '#6c757d'}}>{transaction.currency}</small>
+                      </td>
                       <td data-test-id="method" style={{
                         padding: '15px 10px',
                         color: '#6c757d'
-                      }}>{transaction.method.toUpperCase()}</td>
+                      }}>{transaction.method.toUpperCase()}<br />
+                      {transaction.method === 'card' && transaction.card_network && (
+                        <small style={{color: '#6c757d'}}>Card: {transaction.card_network} ****{transaction.card_last4}</small>
+                      )}
+                      {transaction.method === 'upi' && transaction.vpa && (
+                        <small style={{color: '#6c757d'}}>VPA: {transaction.vpa}</small>
+                      )}
+                      </td>
                       <td data-test-id="status" style={{
                         padding: '15px 10px',
                         color: transaction.status === 'success' ? '#28a745' : transaction.status === 'failed' ? '#dc3545' : '#ffc107',
@@ -260,16 +377,77 @@ function Transactions() {
                           marginRight: '8px'
                         }}></span>
                         {transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)}
+                        {transaction.error_code && (
+                          <div style={{fontSize: '0.8em', color: '#dc3545', marginTop: '4px'}}>
+                            {transaction.error_code}: {transaction.error_description}
+                          </div>
+                        )}
+                      </td>
+                      <td data-test-id="captured" style={{
+                        padding: '15px 10px',
+                        color: transaction.captured ? '#28a745' : '#6c757d',
+                        fontWeight: transaction.captured ? '500' : 'normal'
+                      }}>
+                        {transaction.captured ? 'Yes' : 'No'}
+                      </td>
+                      <td data-test-id="actions" style={{
+                        padding: '15px 10px'
+                      }}>
+                        {actionErrors[transaction.id] && (
+                          <div style={{color: '#dc3545', fontSize: '0.8em', marginBottom: '5px'}}>
+                            {actionErrors[transaction.id]}
+                          </div>
+                        )}
+                        {transaction.status === 'pending' && (
+                          <button
+                            onClick={() => handleCapture(transaction.id)}
+                            disabled={actionLoading[transaction.id]}
+                            style={{
+                              padding: '6px 12px',
+                              backgroundColor: '#28a745',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontSize: '0.8rem',
+                              marginRight: '5px',
+                              opacity: actionLoading[transaction.id] ? 0.6 : 1
+                            }}
+                          >
+                            {actionLoading[transaction.id] ? 'Capturing...' : 'Capture'}
+                          </button>
+                        )}
+                        {(transaction.status === 'success' || transaction.status === 'captured') && (
+                          <button
+                            onClick={() => handleRefund(transaction.id)}
+                            disabled={actionLoading[transaction.id]}
+                            style={{
+                              padding: '6px 12px',
+                              backgroundColor: '#ffc107',
+                              color: '#212529',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontSize: '0.8rem',
+                              opacity: actionLoading[transaction.id] ? 0.6 : 1
+                            }}
+                          >
+                            {actionLoading[transaction.id] ? 'Processing...' : 'Refund'}
+                          </button>
+                        )}
                       </td>
                       <td data-test-id="created-at" style={{
                         padding: '15px 10px',
-                        color: '#6c757d'
-                      }}>{transaction.createdAt}</td>
+                        color: '#6c757d',
+                        fontSize: '0.9em'
+                      }}>{transaction.createdAt}<br />
+                      <small>{transaction.updatedAt !== transaction.createdAt ? `Updated: ${transaction.updatedAt}` : ''}</small>
+                      </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="6" style={{
+                    <td colSpan="8" style={{
                       padding: '30px',
                       textAlign: 'center',
                       color: '#6c757d'

@@ -20,6 +20,9 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -165,6 +168,63 @@ public class RefundController {
             if (refund.getProcessedAt() != null) {
                 response.setProcessedAt(refund.getProcessedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")));
             }
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            ErrorResponse errorResponse = new ErrorResponse("BAD_REQUEST_ERROR", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        }
+    }
+
+    @GetMapping("/refunds")
+    public ResponseEntity<?> listRefunds(
+            @RequestHeader("X-Api-Key") String apiKey,
+            @RequestHeader("X-Api-Secret") String apiSecret,
+            @RequestParam(defaultValue = "10") int limit,
+            @RequestParam(defaultValue = "0") int offset) {
+
+        try {
+            // Authenticate merchant
+            Optional<Merchant> merchantOpt = merchantRepository.findByApiKeyAndApiSecret(apiKey, apiSecret);
+            if (!merchantOpt.isPresent()) {
+                ErrorResponse errorResponse = new ErrorResponse("AUTHENTICATION_ERROR", "Invalid API credentials");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+            }
+
+            Merchant merchant = merchantOpt.get();
+
+            // Get refunds for this merchant
+            List<Refund> refunds = refundRepository.findByMerchantIdOrderByCreatedAtDesc(merchant.getId());
+            
+            // Apply pagination
+            int start = Math.min(offset, refunds.size());
+            int end = Math.min(start + limit, refunds.size());
+            List<Refund> paginatedRefunds = refunds.subList(start, end);
+
+            // Transform refunds to response format
+            List<RefundResponse> refundResponses = paginatedRefunds.stream().map(refund -> {
+                RefundResponse response = new RefundResponse();
+                response.setId(refund.getId());
+                response.setPaymentId(refund.getPaymentId());
+                response.setAmount(refund.getAmount());
+                response.setReason(refund.getReason());
+                response.setStatus(refund.getStatus());
+                response.setCreatedAt(refund.getCreatedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")));
+                
+                if (refund.getProcessedAt() != null) {
+                    response.setProcessedAt(refund.getProcessedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")));
+                }
+                
+                return response;
+            }).collect(Collectors.toList());
+
+            // Create response
+            Map<String, Object> response = new HashMap<>();
+            response.put("data", refundResponses);
+            response.put("total", refunds.size());
+            response.put("limit", limit);
+            response.put("offset", offset);
 
             return ResponseEntity.ok(response);
 

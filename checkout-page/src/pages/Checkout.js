@@ -4,6 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 function Checkout() {
   const [searchParams] = useSearchParams();
   const orderId = searchParams.get('order_id');
+  const isEmbedded = searchParams.get('embedded') === 'true';
   
   const [order, setOrder] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState(''); // 'upi' or 'card'
@@ -24,6 +25,19 @@ function Checkout() {
       fetchOrderDetails();
     }
   }, [orderId]);
+  
+  // Handle 'embedded' parameter for SDK integration
+  useEffect(() => {
+    if (isEmbedded) {
+      // Adjust styles for embedded mode
+      document.body.style.overflow = 'hidden';
+      
+      // Cleanup when component unmounts
+      return () => {
+        document.body.style.overflow = 'auto';
+      };
+    }
+  }, [isEmbedded]);
   
   // Polling function to check payment status
   const pollPaymentStatus = async (paymentId) => {
@@ -252,7 +266,8 @@ function Checkout() {
             color: '#155724',
             marginBottom: '15px',
             fontSize: '1.5rem'
-          }}>Payment Successful!</h2>
+          }}>
+            Payment Successful!</h2>
           <div style={{
             backgroundColor: '#f8f9fa',
             padding: '10px',
@@ -276,6 +291,11 @@ function Checkout() {
                 type: 'payment_success',
                 data: { paymentId: paymentId }
               }, '*');
+                
+              // If not embedded, close the window or redirect
+              if (!isEmbedded) {
+                window.close();
+              }
             }}
             style={{
               padding: '12px 24px',
@@ -291,7 +311,7 @@ function Checkout() {
             onMouseOver={(e) => e.target.style.backgroundColor = '#218838'}
             onMouseOut={(e) => e.target.style.backgroundColor = '#28a745'}
           >
-            Close
+            {isEmbedded ? 'Close' : 'Close Window'}
           </button>
         </div>
       </div>
@@ -335,7 +355,8 @@ function Checkout() {
             color: '#721c24',
             marginBottom: '15px',
             fontSize: '1.5rem'
-          }}>Payment Failed</h2>
+          }}>
+            Payment Failed</h2>
           <p data-test-id="error-message" style={{
             color: '#6c757d',
             marginBottom: '25px',
@@ -379,10 +400,10 @@ function Checkout() {
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'flex-start',
-      minHeight: '100vh',
+      minHeight: isEmbedded ? '500px' : '100vh',
       backgroundColor: '#f8f9fa',
       padding: '20px',
-      paddingTop: '60px'
+      paddingTop: isEmbedded ? '20px' : '60px'
     }}>
       <div data-test-id="checkout-container" style={{
         backgroundColor: 'white',
